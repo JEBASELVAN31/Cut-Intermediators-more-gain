@@ -1,0 +1,279 @@
+// server.js
+const express = require('express');
+const cors = require('cors');
+const bodyParser = require('body-parser');
+const authRoutes = require('./routes/auth');
+const productRoutes = require('./routes/products');
+const db = require('./db');
+
+const app = express();
+app.use(cors());
+app.use(bodyParser.json());
+app.use(express.static('public'));
+
+app.use('/api/auth', authRoutes);
+app.use('/api/products', productRoutes);
+
+const PORT = process.env.PORT || 3000;
+app.listen(PORT, () => console.log(`Server running on port ${PORT}`));
+
+// db.js
+const mysql = require('mysql2');
+const connection = mysql.createConnection({
+  host: 'localhost',
+  user: 'root',
+  password: '',
+  database: 'farm_market'
+});
+
+connection.connect(err => {
+  if (err) throw err;
+  console.log('Connected to MySQL');
+});
+
+module.exports = connection;
+
+// routes/auth.js
+const express = require('express');
+const router = express.Router();
+const db = require('../db');
+
+router.post('/register', (req, res) => {
+  const { name, email, password, role } = req.body;
+  db.query('INSERT INTO users (name, email, password, role) VALUES (?, ?, ?, ?)', [name, email, password, role],
+    (err) => {
+      if (err) return res.status(500).send(err);
+      res.send('User registered');
+    });
+});
+
+router.post('/login', (req, res) => {
+  const { email, password } = req.body;
+  db.query('SELECT * FROM users WHERE email = ? AND password = ?', [email, password],
+    (err, results) => {
+      if (err) return res.status(500).send(err);
+      if (results.length > 0) res.json(results[0]);
+      else res.status(401).send('Invalid credentials');
+    });
+});
+
+module.exports = router;
+
+// routes/products.js
+const express = require('express');
+const router = express.Router();
+const db = require('../db');
+
+router.post('/add', (req, res) => {
+  const { name, description, price, user_id } = req.body;
+  db.query('INSERT INTO products (name, description, price, user_id) VALUES (?, ?, ?, ?)',
+    [name, description, price, user_id], (err) => {
+      if (err) return res.status(500).send(err);
+      res.send('Product added');
+    });
+});
+
+router.get('/', (req, res) => {
+  db.query('SELECT p.*, u.name as farmer FROM products p JOIN users u ON p.user_id = u.id',
+    (err, results) => {
+      if (err) return res.status(500).send(err);
+      res.json(results);
+    });
+});
+
+module.exports = router;
+
+// public/index.html
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Farm Marketplace</title>
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+  <h1>Welcome to the Farm Marketplace</h1>
+  <nav>
+    <a href="register.html">Register</a>
+    <a href="login.html">Login</a>
+    <a href="dashboard.html">Dashboard</a>
+  </nav>
+</body>
+</html>
+
+// public/register.html
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Register</title>
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <h2>Register</h2>
+  <form id="registerForm">
+    <input type="text" name="name" placeholder="Name" required>
+    <input type="email" name="email" placeholder="Email" required>
+    <input type="password" name="password" placeholder="Password" required>
+    <select name="role">
+      <option value="farmer">Farmer</option>
+      <option value="buyer">Buyer</option>
+    </select>
+    <button type="submit">Register</button>
+  </form>
+  <script src="scripts.js"></script>
+</body>
+</html>
+
+// public/login.html
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Login</title>
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <h2>Login</h2>
+  <form id="loginForm">
+    <input type="email" name="email" placeholder="Email" required>
+    <input type="password" name="password" placeholder="Password" required>
+    <button type="submit">Login</button>
+  </form>
+  <script src="scripts.js"></script>
+</body>
+</html>
+
+// public/dashboard.html
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Dashboard</title>
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <h2>Dashboard</h2>
+  <div id="userPanel"></div>
+  <div id="productList"></div>
+  <script src="scripts.js"></script>
+</body>
+</html>
+
+// public/styles.css
+body {
+  font-family: Arial, sans-serif;
+  padding: 20px;
+}
+form input, form select, form button {
+  display: block;
+  margin: 10px 0;
+}
+
+// public/scripts.js
+document.addEventListener('DOMContentLoaded', () => {
+  const registerForm = document.getElementById('registerForm');
+  const loginForm = document.getElementById('loginForm');
+
+  if (registerForm) {
+    registerForm.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const formData = new FormData(registerForm);
+      const data = Object.fromEntries(formData.entries());
+      const res = await fetch('/api/auth/register', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(data)
+      });
+      alert(await res.text());
+    });
+  }
+
+  if (loginForm) {
+    loginForm.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const formData = new FormData(loginForm);
+      const data = Object.fromEntries(formData.entries());
+      const res = await fetch('/api/auth/login', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(data)
+      });
+      const user = await res.json();
+      localStorage.setItem('user', JSON.stringify(user));
+      location.href = 'dashboard.html';
+    });
+  }
+
+  const dashboard = document.getElementById('userPanel');
+  if (dashboard) {
+    const user = JSON.parse(localStorage.getItem('user'));
+    if (user) {
+      dashboard.innerHTML = `<p>Welcome ${user.name} (${user.role})</p>`;
+
+      if (user.role === 'farmer') {
+        dashboard.innerHTML += `
+          <h3>Add Product</h3>
+          <form id="addProduct">
+            <input name="name" placeholder="Product name" required>
+            <input name="description" placeholder="Description">
+            <input name="price" type="number" step="0.01" placeholder="Price">
+            <button type="submit">Add</button>
+          </form>
+        `;
+
+        document.getElementById('addProduct').addEventListener('submit', async (e) => {
+          e.preventDefault();
+          const formData = new FormData(e.target);
+          const data = Object.fromEntries(formData.entries());
+          data.user_id = user.id;
+          const res = await fetch('/api/products/add', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(data)
+          });
+          alert(await res.text());
+        });
+      }
+    }
+  }
+
+  const productList = document.getElementById('productList');
+  if (productList) {
+    fetch('/api/products')
+      .then(res => res.json())
+      .then(products => {
+        productList.innerHTML = '<h3>Available Products</h3>' + products.map(p => `
+          <div>
+            <strong>${p.name}</strong> by ${p.farmer}<br>
+            ${p.description}<br>
+            $${p.price}
+          </div>
+        `).join('');
+      });
+  }
+});
+
+// SQL SCHEMA
+/*
+CREATE DATABASE farm_market;
+USE farm_market;
+
+CREATE TABLE users (
+  id INT AUTO_INCREMENT PRIMARY KEY,
+  name VARCHAR(100),
+  email VARCHAR(100),
+  password VARCHAR(100),
+  role ENUM('farmer','buyer')
+);
+
+CREATE TABLE products (
+  id INT AUTO_INCREMENT PRIMARY KEY,
+  name VARCHAR(100),
+  description TEXT,
+  price DECIMAL(10,2),
+  user_id INT,
+  FOREIGN KEY(user_id) REFERENCES users(id)
+);
+*/
