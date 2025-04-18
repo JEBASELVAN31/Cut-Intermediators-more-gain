@@ -1,0 +1,248 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>FarmConnect - Farmers Meet Buyers</title>
+  <style>
+    body {
+      margin: 0;
+      font-family: 'Segoe UI', sans-serif;
+      background: #f4f4f9;
+      color: #333;
+    }
+
+    header {
+      background: #2e8b57;
+      color: white;
+      padding: 1rem 2rem;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    nav a {
+      color: white;
+      margin: 0 1rem;
+      text-decoration: none;
+    }
+
+    .hero {
+      padding: 3rem;
+      background: url('https://images.unsplash.com/photo-1506617420156-8e4536971650?auto=format&fit=crop&w=1470&q=80') no-repeat center/cover;
+      color: white;
+      text-align: center;
+    }
+
+    .hero h1 {
+      font-size: 3rem;
+      margin-bottom: 0.5rem;
+    }
+
+    .section {
+      padding: 3rem 2rem;
+    }
+
+    .cards {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+      gap: 2rem;
+    }
+
+    .card {
+      background: white;
+      border-radius: 10px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+      padding: 1rem;
+      transition: transform 0.3s;
+    }
+
+    .card:hover {
+      transform: translateY(-5px);
+    }
+
+    .form-section {
+      display: flex;
+      gap: 2rem;
+      flex-wrap: wrap;
+    }
+
+    form {
+      background: white;
+      padding: 2rem;
+      border-radius: 8px;
+      box-shadow: 0 0 10px rgba(0,0,0,0.1);
+      flex: 1;
+    }
+
+    input, select, button {
+      width: 100%;
+      padding: 0.7rem;
+      margin-top: 0.8rem;
+      margin-bottom: 1rem;
+      border: 1px solid #ccc;
+      border-radius: 6px;
+    }
+
+    button {
+      background: #2e8b57;
+      color: white;
+      font-weight: bold;
+      border: none;
+      cursor: pointer;
+    }
+
+    button:hover {
+      background: #276b48;
+    }
+
+    footer {
+      background: #2e8b57;
+      color: white;
+      text-align: center;
+      padding: 1rem;
+    }
+
+    .search {
+      margin: 2rem 0;
+      text-align: center;
+    }
+
+    .search input {
+      padding: 0.5rem;
+      width: 60%;
+      max-width: 400px;
+    }
+  </style>
+</head>
+<body>
+
+<header>
+  <h2>FarmConnect</h2>
+  <nav>
+    <a href="#farmers">For Farmers</a>
+    <a href="#buyers">For Buyers</a>
+    <a href="#products">Products</a>
+    <a href="#contact">Contact</a>
+  </nav>
+</header>
+
+<section class="hero">
+  <h1>Cut Middlemen. Boost Profits.</h1>
+  <p>Connecting local farmers directly with wholesale buyers</p>
+</section>
+
+<section id="farmers" class="section">
+  <h2>Farmer Dashboard</h2>
+  <div class="form-section">
+    <form id="farmerForm">
+      <h3>Post Your Product</h3>
+      <input type="text" placeholder="Product Name" required />
+      <input type="number" placeholder="Quantity (kg)" required />
+      <input type="text" placeholder="Price per kg" required />
+      <input type="text" placeholder="Location" required />
+      <button type="submit">Submit Product</button>
+    </form>
+
+    <form>
+      <h3>Farmer Login</h3>
+      <input type="text" placeholder="Email" required />
+      <input type="password" placeholder="Password" required />
+      <button>Login</button>
+    </form>
+  </div>
+</section>
+
+<section id="buyers" class="section">
+  <h2>Buyer Dashboard</h2>
+  <div class="form-section">
+    <form>
+      <h3>Buyer Signup</h3>
+      <input type="text" placeholder="Business Name" required />
+      <input type="email" placeholder="Email" required />
+      <input type="password" placeholder="Password" required />
+      <button>Register</button>
+    </form>
+
+    <form>
+      <h3>Buyer Login</h3>
+      <input type="text" placeholder="Email" required />
+      <input type="password" placeholder="Password" required />
+      <button>Login</button>
+    </form>
+  </div>
+</section>
+
+<section id="products" class="section">
+  <h2>Available Products</h2>
+  <div class="search">
+    <input type="text" id="searchBox" placeholder="Search products..." />
+  </div>
+  <div class="cards" id="productList">
+    <!-- Product cards will be added here -->
+  </div>
+</section>
+
+<section id="contact" class="section">
+  <h2>Contact Us</h2>
+  <form>
+    <input type="text" placeholder="Your Name" required />
+    <input type="email" placeholder="Email Address" required />
+    <textarea placeholder="Your Message" rows="5" style="width:100%; padding:1rem;"></textarea>
+    <button>Send Message</button>
+  </form>
+</section>
+
+<footer>
+  <p>&copy; 2025 FarmConnect. All rights reserved.</p>
+</footer>
+
+<script>
+  const productList = document.getElementById("productList");
+  const farmerForm = document.getElementById("farmerForm");
+  const searchBox = document.getElementById("searchBox");
+
+  let products = [];
+
+  farmerForm.addEventListener("submit", (e) => {
+    e.preventDefault();
+    const inputs = farmerForm.querySelectorAll("input");
+    const product = {
+      name: inputs[0].value,
+      quantity: inputs[1].value,
+      price: inputs[2].value,
+      location: inputs[3].value
+    };
+    products.push(product);
+    renderProducts(products);
+    farmerForm.reset();
+  });
+
+  function renderProducts(list) {
+    productList.innerHTML = "";
+    list.forEach(p => {
+      const card = document.createElement("div");
+      card.className = "card";
+      card.innerHTML = `
+        <h3>${p.name}</h3>
+        <p><strong>Qty:</strong> ${p.quantity} kg</p>
+        <p><strong>Price:</strong> ₹${p.price}/kg</p>
+        <p><strong>Location:</strong> ${p.location}</p>
+        <button onclick="alert('Added to cart!')">Add to Cart</button>
+      `;
+      productList.appendChild(card);
+    });
+  }
+
+  searchBox.addEventListener("input", () => {
+    const keyword = searchBox.value.toLowerCase();
+    const filtered = products.filter(p => 
+      p.name.toLowerCase().includes(keyword) ||
+      p.location.toLowerCase().includes(keyword)
+    );
+    renderProducts(filtered);
+  });
+</script>
+
+</body>
+</html>
